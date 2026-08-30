@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/profile_service.dart';
+import '../widgets/skeleton_widgets.dart';
 import '../widgets/auth_widgets.dart';
 
 const _kGreenBadgeBg = Color(0xFFE8F5EC);
@@ -74,16 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (profileProvider.loading && profile == null)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 80),
-            child: Center(
-              child: SizedBox(
-                width: 26,
-                height: 26,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.4,
-                  color: kAuthRed,
-                ),
-              ),
-            ),
+            child: SkeletonProfile(),
           )
         else ...[
           _identityCard(text, name, email, role),

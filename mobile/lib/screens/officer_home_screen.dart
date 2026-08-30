@@ -8,6 +8,7 @@ import '../providers/junction_provider.dart';
 import '../providers/live_ambulance_provider.dart';
 import '../providers/notification_provider.dart';
 import '../models/notification_model.dart';
+import '../widgets/skeleton_widgets.dart';
 import '../widgets/auth_widgets.dart';
 import 'officer_map_screen.dart';
 import 'officer_history_screen.dart';
@@ -639,7 +640,7 @@ class _OfficerHomeScreenState extends State<OfficerHomeScreen> {
       ),
       body: GlassBackdrop(
         child: notifs.loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const SkeletonList(itemCount: 6)
             : notifs.notifications.isEmpty
                 ? const AuthEmptyState(
                     icon: Icons.notifications_none_rounded,

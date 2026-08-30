@@ -8,6 +8,7 @@ import '../screens/location_pick_screen.dart';
 import '../services/ai_service.dart';
 import '../services/api_service.dart';
 import '../services/geocoding_service.dart';
+import '../widgets/skeleton_widgets.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/emergency_button.dart';
 
@@ -171,18 +172,11 @@ class _EmergencyActivateScreenState extends State<EmergencyActivateScreen> {
                       size: 20,
                       color: kAuthIcon,
                     ),
-                    suffixIcon: loading
-                        ? const Padding(
-                            padding: EdgeInsets.all(11),
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.2,
-                                color: kAuthRed,
-                              ),
-                            ),
-                          )
+                      suffixIcon: loading
+                          ? const Padding(
+                              padding: EdgeInsets.all(11),
+                              child: SkeletonLoadingIndicator(size: 18),
+                            )
                         : null,
                     border: fieldBorder(kAuthBorder),
                     enabledBorder: fieldBorder(kAuthBorder),

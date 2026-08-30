@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/junction_provider.dart';
+import '../widgets/skeleton_widgets.dart';
 import '../widgets/auth_widgets.dart';
 
 class OfficerHistoryScreen extends StatefulWidget {
@@ -51,7 +52,7 @@ class _OfficerHistoryScreenState extends State<OfficerHistoryScreen> {
       ),
       body: GlassBackdrop(
         child: junctions.loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const SkeletonList(itemCount: 5)
             : history.isEmpty
                 ? const AuthEmptyState(
                     icon: Icons.traffic_rounded,

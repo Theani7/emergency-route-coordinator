@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import '../widgets/skeleton_widgets.dart';
 import '../widgets/auth_widgets.dart';
 import 'chat_room_screen.dart';
 
@@ -87,7 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: GlassBackdrop(
         child: chat.loading && chat.sessions.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const SkeletonList(itemCount: 5)
             : chat.sessions.isEmpty
                 ? RefreshIndicator(
                     onRefresh: chat.loadSessions,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/skeleton_widgets.dart';
 import '../widgets/auth_widgets.dart';
 
 class EmergencyButton extends StatelessWidget {
@@ -33,10 +35,7 @@ class EmergencyButton extends StatelessWidget {
             ? const SizedBox(
                 height: 18,
                 width: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  color: Colors.white,
-                ),
+                child: SkeletonLoadingIndicator(size: 18),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import '../widgets/skeleton_widgets.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -692,10 +694,7 @@ class _AuthPrimaryButtonState extends State<AuthPrimaryButton> {
                 ? const SizedBox(
                     height: 18,
                     width: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      color: Colors.white,
-                    ),
+                    child: SkeletonLoadingIndicator(size: 18),
                   )
                 : Text(
                     widget.label,

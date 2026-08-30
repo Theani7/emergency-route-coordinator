@@ -15,6 +15,7 @@ import '../models/chat_models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../services/gps_service.dart';
+import '../widgets/skeleton_widgets.dart';
 import '../widgets/auth_widgets.dart';
 import 'location_pick_screen.dart';
 
@@ -203,7 +204,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.4),
+                child: SkeletonLoadingIndicator(size: 20),
               ),
               SizedBox(width: 14),
               Text(
@@ -723,10 +724,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
+                        child: SkeletonLoadingIndicator(size: 18),
                       )
                     : const Icon(Icons.send_rounded, size: 20, color: Colors.white),
               ),
