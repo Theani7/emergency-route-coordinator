@@ -1,5 +1,6 @@
 """User management (admin only)."""
 
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,7 +13,7 @@ from app.api.deps import RequireAdmin, get_db
 from app.core.security import hash_password
 from app.models.ambulance import Ambulance, AmbulanceStatus
 from app.models.officer import TrafficOfficer
-from app.models.user import User, UserRole
+from app.models.user import User, UserApprovalStatus, UserRole
 from app.schemas.auth import UserResponse
 
 router = APIRouter()
@@ -39,11 +40,17 @@ class UserCreateRequest(BaseModel):
 def _user_to_response(user: User) -> UserResponse:
     veh = user.ambulance.vehicle_number if getattr(user, "ambulance", None) else None
     zone = user.officer_profile.assigned_zone if getattr(user, "officer_profile", None) else None
+    approval_stat = (
+        user.approval_status.value
+        if hasattr(user.approval_status, "value")
+        else str(user.approval_status)
+    )
     return UserResponse(
         id=user.id,
         name=user.name,
         email=user.email,
         role=user.role,
+        approval_status=approval_stat,
         vehicle_number=veh,
         assigned_zone=zone,
     )
@@ -53,19 +60,22 @@ def _user_to_response(user: User) -> UserResponse:
 async def list_users(
     current_user: RequireAdmin,
     db: AsyncSession = Depends(get_db),
+    approval_status: UserApprovalStatus | None = None,
     skip: int = 0,
     limit: int = 100,
 ):
     """List all system users (admin only)."""
-    result = await db.execute(
+    stmt = (
         select(User)
-        .offset(skip)
-        .limit(limit)
         .options(
             selectinload(User.ambulance),
             selectinload(User.officer_profile),
         )
     )
+    if approval_status is not None:
+        stmt = stmt.where(User.approval_status == approval_status)
+    stmt = stmt.offset(skip).limit(limit)
+    result = await db.execute(stmt)
     return [_user_to_response(u) for u in result.scalars().all()]
 
 
@@ -270,3 +280,52 @@ async def delete_user(
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
     await db.delete(user)
     await db.flush()
+
+
+@router.post("/{user_id}/approve", response_model=UserResponse)
+async def approve_user(
+    user_id: int,
+    current_user: RequireAdmin,
+    db: AsyncSession = Depends(get_db),
+):
+    """Approve a pending user registration (admin only)."""
+    result = await db.execute(
+        select(User)
+        .where(User.id == user_id)
+        .options(
+            selectinload(User.ambulance),
+            selectinload(User.officer_profile),
+        )
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.approval_status = UserApprovalStatus.APPROVED
+    user.approved_at = datetime.now(timezone.utc)
+    user.approved_by = current_user.id
+    await db.flush()
+    return _user_to_response(user)
+
+
+@router.post("/{user_id}/reject", response_model=UserResponse)
+async def reject_user(
+    user_id: int,
+    current_user: RequireAdmin,
+    db: AsyncSession = Depends(get_db),
+):
+    """Reject a pending user registration (admin only)."""
+    result = await db.execute(
+        select(User)
+        .where(User.id == user_id)
+        .options(
+            selectinload(User.ambulance),
+            selectinload(User.officer_profile),
+        )
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.approval_status = UserApprovalStatus.REJECTED
+    await db.flush()
+    return _user_to_response(user)
+
