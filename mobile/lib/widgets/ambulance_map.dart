@@ -21,6 +21,8 @@ class AmbulanceMap extends StatefulWidget {
   final List<LiveAmbulanceMarker> extraAmbulances;
   final bool showKathmanduHospitals;
   final bool showTrafficOverlay;
+  final double? officerLat;
+  final double? officerLon;
 
   const AmbulanceMap({
     super.key,
@@ -32,6 +34,8 @@ class AmbulanceMap extends StatefulWidget {
     this.extraAmbulances = const [],
     this.showKathmanduHospitals = true,
     this.showTrafficOverlay = true,
+    this.officerLat,
+    this.officerLon,
   });
 
   @override
@@ -216,6 +220,16 @@ class _AmbulanceMapState extends State<AmbulanceMap> {
         markers.add(
             _marker(h.lat, h.lon, Icons.local_hospital, Colors.green, h.name));
       }
+    }
+
+    if (widget.officerLat != null && widget.officerLon != null) {
+      markers.add(_marker(
+        widget.officerLat!,
+        widget.officerLon!,
+        Icons.person_pin_circle,
+        const Color(0xFF2E6FD8),
+        'You',
+      ));
     }
 
     final polylines = <Polyline>[

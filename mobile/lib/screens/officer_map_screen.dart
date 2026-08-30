@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import '../models/live_ambulance_model.dart';
 import '../providers/junction_provider.dart';
 import '../providers/live_ambulance_provider.dart';
 import '../services/junction_service.dart';
+import '../services/gps_service.dart';
 import '../utils/route_utils.dart';
 import '../widgets/ambulance_map.dart';
 import '../widgets/auth_widgets.dart';
@@ -22,13 +24,38 @@ class _OfficerMapScreenState extends State<OfficerMapScreen> {
   LiveAmbulanceModel? _selected;
   JunctionPoint? _selectedJunction;
   bool _showRoutePanel = false;
+  double? _officerLat;
+  double? _officerLon;
+  Timer? _locationTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<JunctionProvider>().loadKathmanduJunctions();
+      _startLocationTracking();
     });
+  }
+
+  void _startLocationTracking() {
+    _locationTimer?.cancel();
+    _locationTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      try {
+        final position = await GpsTrackingService.bestPosition();
+        if (position != null && mounted) {
+          setState(() {
+            _officerLat = position.latitude;
+            _officerLon = position.longitude;
+          });
+        }
+      } catch (_) {}
+    });
+  }
+
+  @override
+  void dispose() {
+    _locationTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -70,6 +97,8 @@ class _OfficerMapScreenState extends State<OfficerMapScreen> {
                         destLat: selected?.destLat,
                         destLon: selected?.destLon,
                         routePolyline: selected?.routePolyline,
+                        officerLat: _officerLat,
+                        officerLon: _officerLon,
                         extraAmbulances: ambulances
                             .where(
                                 (a) => a.ambulanceId != selected?.ambulanceId)
