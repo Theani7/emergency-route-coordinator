@@ -79,6 +79,7 @@ class DriverHomeScreen extends StatefulWidget {
 class _DriverHomeScreenState extends State<DriverHomeScreen> {
   int _selectedIndex = 0;
   String _driverStatus = 'Available';
+  bool _locationPermissionChecked = false;
 
   @override
   void initState() {
@@ -88,7 +89,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       final emergency = context.read<EmergencyProvider>();
       final notifications = context.read<NotificationProvider>();
       final chat = context.read<ChatProvider>();
-      await loc.init();
+      await _requestLocationPermission(loc);
       await emergency.restoreActiveSession();
       await notifications.setMode(driver: true);
       await chat.loadSessions();
@@ -108,6 +109,58 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       }
       await emergency.loadHistory();
     });
+  }
+
+  Future<void> _requestLocationPermission(
+      DriverLocationProvider loc) async {
+    if (_locationPermissionChecked) return;
+    _locationPermissionChecked = true;
+
+    final granted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.location_on_rounded, color: kAuthRed),
+            SizedBox(width: 10),
+            Text('Location Access'),
+          ],
+        ),
+        content: const Text(
+          'Sajiloroute needs your location to track ambulance trips '
+          'and assist traffic officers in clearing your route. '
+          'Please allow location access.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Not now'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final ok = await loc.init();
+              if (ok) {
+                if (ctx.mounted) Navigator.of(ctx).pop(true);
+              } else {
+                if (ctx.mounted) Navigator.of(ctx).pop(false);
+              }
+            },
+            icon: const Icon(Icons.my_location),
+            label: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+
+    if (granted != true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You can enable location later in settings.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override

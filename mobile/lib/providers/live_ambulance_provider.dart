@@ -78,18 +78,21 @@ class DriverLocationProvider extends ChangeNotifier {
   double? get speedKmh => _speedKmh;
   bool get hasPosition => _lat != null && _lon != null;
 
-  Future<void> init() async {
+  Future<bool> init() async {
     final ok = await _gpsService.requestPermission();
-    if (!ok) return;
+    if (!ok) return false;
     try {
       final pos = await _gpsService.getCurrentPosition();
-      if (pos == null) return;
+      if (pos == null) return false;
       _lat = pos.latitude;
       _lon = pos.longitude;
       _heading = pos.heading;
       _speedKmh = pos.speed * 3.6;
       notifyListeners();
-    } catch (_) {}
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<bool> startTracking(int sessionId, {VoidCallback? onTick}) async {
