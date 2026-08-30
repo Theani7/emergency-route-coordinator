@@ -3,10 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../services/firebase_auth_service.dart';
 import '../widgets/auth_widgets.dart';
 import 'register_screen.dart';
 
 import '../services/server_config_service.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -199,6 +201,32 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ? 'Password required'
                                   : null,
                             ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ForgotPasswordScreen(),
+                                    ),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.only(top: 8, left: 8, right: 0),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'Forgot password?',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: kAuthRedLink,
+                                  ),
+                                ),
+                              ),
+                            ),
                             if (auth.error != null) ...[
                               const SizedBox(height: 16),
                               AuthErrorBanner(message: auth.error!),
@@ -215,6 +243,48 @@ class _LoginScreenState extends State<LoginScreen> {
                                   _emailCtrl.text.trim(),
                                   _passCtrl.text,
                                 );
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Expanded(child: Divider(color: kAuthBorder, thickness: 1)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text('or', style: text.copyWith(fontSize: 12, color: kAuthMuted)),
+                                ),
+                                const Expanded(child: Divider(color: kAuthBorder, thickness: 1)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _GoogleSignInButton(
+                              onPressed: () async {
+                                final fbAuth = FirebaseAuthService();
+                                try {
+                                  final cred = await fbAuth.signInWithGoogle();
+                                  if (cred != null && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Welcome ${cred.user?.displayName ?? cred.user?.email}', style: GoogleFonts.inter(fontSize: 13)),
+                                        backgroundColor: kAuthText,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                    );
+                                    // Navigate based on Firestore role or default to driver
+                                    // For now, go to driver home; Firestore doc will store role
+                                    if (context.mounted) {
+                                      // Use GoRouter if available, else push
+                                      // AuthProvider will handle custom backend; Firebase user is separate
+                                    }
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Google sign-in failed: $e'), backgroundColor: kAuthRed),
+                                    );
+                                  }
+                                }
                               },
                             ),
                           ],
@@ -241,6 +311,29 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GoogleSignInButton extends StatelessWidget {
+  const _GoogleSignInButton({required this.onPressed});
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = GoogleFonts.inter();
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Image.asset('assets/google-icon.png', width: 20, height: 20),
+      label: Text('Continue with Google', style: text.copyWith(fontSize: 14, fontWeight: FontWeight.w500, color: kAuthText)),
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: kAuthText,
+        side: const BorderSide(color: kAuthBorder),
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 0,
       ),
     );
   }
