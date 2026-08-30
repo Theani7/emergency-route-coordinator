@@ -41,7 +41,10 @@ describe('Dashboard API Service', () => {
     const delSpy = vi.spyOn(api, 'delete').mockResolvedValue({ data: {} } as any);
 
     await usersApi.list();
-    expect(getSpy).toHaveBeenCalledWith('/api/v1/users/');
+    expect(getSpy).toHaveBeenCalledWith('/api/v1/users/', { params: {} });
+
+    await usersApi.getUsers('pending');
+    expect(getSpy).toHaveBeenCalledWith('/api/v1/users/', { params: { approval_status: 'pending' } });
 
     await usersApi.create({ name: 'Test', email: 'test@example.com', role: 'driver' });
     expect(postSpy).toHaveBeenCalledWith('/api/v1/users/', { name: 'Test', email: 'test@example.com', role: 'driver' });
@@ -49,7 +52,14 @@ describe('Dashboard API Service', () => {
     await usersApi.update(5, { name: 'New Name' });
     expect(putSpy).toHaveBeenCalledWith('/api/v1/users/5', { name: 'New Name' });
 
+    await usersApi.approveUser(5);
+    expect(postSpy).toHaveBeenCalledWith('/api/v1/users/5/approve');
+
+    await usersApi.rejectUser(5);
+    expect(postSpy).toHaveBeenCalledWith('/api/v1/users/5/reject');
+
     await usersApi.delete(5);
     expect(delSpy).toHaveBeenCalledWith('/api/v1/users/5');
   });
 });
+

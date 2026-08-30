@@ -34,3 +34,17 @@ export interface Emergency {
   started_at: string;
   status: string;
 }
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'driver' | 'officer' | string;
+  approval_status?: 'pending' | 'approved' | 'rejected' | string;
+  vehicle_number?: string | null;
+  assigned_zone?: string | null;
+  created_at?: string;
+  approved_at?: string | null;
+  approved_by?: number | null;
+}
+

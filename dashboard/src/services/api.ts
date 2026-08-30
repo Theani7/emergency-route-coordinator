@@ -26,8 +26,21 @@ api.interceptors.response.use(
   }
 );
 
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'driver' | 'officer' | string;
+  approval_status?: 'pending' | 'approved' | 'rejected' | string;
+  vehicle_number?: string | null;
+  assigned_zone?: string | null;
+  created_at?: string;
+  approved_at?: string | null;
+  approved_by?: number | null;
+}
+
 export const authApi = {
-  login: (email, password) =>
+  login: (email: string, password: string) =>
     api.post('/api/v1/auth/login', { email, password }),
   me: () => api.get('/api/v1/auth/me'),
 };
@@ -48,11 +61,18 @@ export const gpsApi = {
 };
 
 export const usersApi = {
-  list: () => api.get('/api/v1/users/'),
-  get: (id) => api.get(`/api/v1/users/${id}`),
-  create: (data) => api.post('/api/v1/users/', data),
-  update: (id, data) => api.put(`/api/v1/users/${id}`, data),
-  delete: (id) => api.delete(`/api/v1/users/${id}`),
+  list: (approvalStatus?: string) =>
+    api.get<User[]>('/api/v1/users/', { params: approvalStatus ? { approval_status: approvalStatus } : {} }),
+  getUsers: (approvalStatus?: string) =>
+    api.get<User[]>('/api/v1/users/', { params: approvalStatus ? { approval_status: approvalStatus } : {} }),
+  get: (id: number | string) => api.get<User>(`/api/v1/users/${id}`),
+  create: (data: any) => api.post<User>('/api/v1/users/', data),
+  update: (id: number | string, data: any) => api.put<User>(`/api/v1/users/${id}`, data),
+  delete: (id: number | string) => api.delete(`/api/v1/users/${id}`),
+  approve: (id: number | string) => api.post<User>(`/api/v1/users/${id}/approve`),
+  approveUser: (id: number | string) => api.post<User>(`/api/v1/users/${id}/approve`),
+  reject: (id: number | string) => api.post<User>(`/api/v1/users/${id}/reject`),
+  rejectUser: (id: number | string) => api.post<User>(`/api/v1/users/${id}/reject`),
 };
 
 export const ambulancesApi = {
@@ -60,3 +80,4 @@ export const ambulancesApi = {
 };
 
 export default api;
+
