@@ -12,7 +12,7 @@ class UserRegister(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
     role: UserRole
     vehicle_number: str | None = Field(None, description="Required for drivers")
-    assigned_zone: str | None = Field(None, description="Required for officers")
+    assigned_zone: str | None = Field(None, description="Optional for officers")
     zone_latitude: float | None = None
     zone_longitude: float | None = None
     otp: str | None = Field(None, min_length=6, max_length=6, description="6-digit email verification OTP")

@@ -167,8 +167,6 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
         )
         if existing_ambulance.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="vehicle_number already registered")
-    if payload.role == UserRole.OFFICER and not payload.assigned_zone:
-        raise HTTPException(status_code=400, detail="assigned_zone required for officers")
 
     user = User(
         name=payload.name,

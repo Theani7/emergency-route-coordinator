@@ -17,7 +17,7 @@ class TrafficOfficer(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    assigned_zone: Mapped[str] = mapped_column(String(255), nullable=False)
+    assigned_zone: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
     zone_latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     zone_longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     zone_radius_km: Mapped[float] = mapped_column(Float, default=5.0, nullable=False)

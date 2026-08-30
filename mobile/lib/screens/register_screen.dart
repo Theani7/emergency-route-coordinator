@@ -23,7 +23,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   final _vehicleCtrl = TextEditingController();
-  final _zoneCtrl = TextEditingController();
   final _serverConfig = ServerConfigService();
   String _role = 'driver';
   String? _serverUrl;
@@ -72,7 +71,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             password: _passCtrl.text,
             role: _role,
             vehicleNumber: _role == 'driver' ? _vehicleCtrl.text.trim() : null,
-            assignedZone: _role == 'officer' ? _zoneCtrl.text.trim() : null,
           ),
         ),
       );
@@ -101,7 +99,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passCtrl.dispose();
     _confirmCtrl.dispose();
     _vehicleCtrl.dispose();
-    _zoneCtrl.dispose();
     super.dispose();
   }
 
@@ -254,18 +251,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 helper: 'e.g. BA 1 KHA 1234',
                                 validator: (v) => v == null || v.trim().isEmpty
                                     ? 'Vehicle number required for drivers'
-                                    : null,
-                              ),
-                            ],
-                            if (_role == 'officer') ...[
-                              const SizedBox(height: 16),
-                              AuthField(
-                                controller: _zoneCtrl,
-                                label: 'Assigned Zone',
-                                icon: Icons.map_outlined,
-                                helper: 'e.g. New Baneshwor',
-                                validator: (v) => v == null || v.trim().isEmpty
-                                    ? 'Assigned zone required for officers'
                                     : null,
                               ),
                             ],

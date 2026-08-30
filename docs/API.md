@@ -27,9 +27,7 @@ Content-Type: application/json
 }
 ```
 
-Roles: `admin`, `driver`, `officer`
-
-Officers require `assigned_zone`, optional `zone_latitude`, `zone_longitude`.
+Officers track live location dynamically (optional assigned_zone).
 
 ### Login
 

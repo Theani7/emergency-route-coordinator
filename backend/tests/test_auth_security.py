@@ -96,3 +96,21 @@ async def test_security_headers_present():
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["referrer-policy"].lower() == "no-referrer"
     assert "Content-Security-Policy" in response.headers
+
+
+async def test_register_officer_without_assigned_zone():
+    suffix = str(int(time.time() * 1000))
+    async with await _client() as client:
+        response = await client.post(
+            "/api/v1/auth/register",
+            json={
+                "name": "Live Location Officer",
+                "email": f"officer-noz-{suffix}@example.com",
+                "password": "Password@12345",
+                "role": "officer",
+            },
+        )
+        assert response.status_code == 201, response.text
+        data = response.json()
+        assert data["role"] == "officer"
+        assert data["email"] == f"officer-noz-{suffix}@example.com"

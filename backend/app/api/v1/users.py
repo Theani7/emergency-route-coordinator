@@ -108,9 +108,6 @@ async def create_user(
         )
         if existing_amb.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="vehicle_number already registered")
-    elif payload.role == UserRole.OFFICER:
-        if not payload.assigned_zone:
-            raise HTTPException(status_code=400, detail="assigned_zone required for officers")
 
     user = User(
         name=payload.name,
@@ -201,10 +198,6 @@ async def update_user(
             else:
                 user.ambulance.vehicle_number = payload.vehicle_number
         elif payload.role == UserRole.OFFICER:
-            if not payload.assigned_zone:
-                raise HTTPException(
-                    status_code=400, detail="assigned_zone required to assign officer role"
-                )
             if user.ambulance:
                 await db.delete(user.ambulance)
             if not user.officer_profile:
@@ -214,7 +207,7 @@ async def update_user(
                         assigned_zone=payload.assigned_zone,
                     )
                 )
-            else:
+            elif payload.assigned_zone is not None:
                 user.officer_profile.assigned_zone = payload.assigned_zone
         elif payload.role == UserRole.ADMIN:
             if user.ambulance:
@@ -235,7 +228,7 @@ async def update_user(
                         status=AmbulanceStatus.AVAILABLE,
                     )
                 )
-        elif target_role == UserRole.OFFICER and payload.assigned_zone:
+        elif target_role == UserRole.OFFICER and payload.assigned_zone is not None:
             if user.officer_profile:
                 user.officer_profile.assigned_zone = payload.assigned_zone
             else:

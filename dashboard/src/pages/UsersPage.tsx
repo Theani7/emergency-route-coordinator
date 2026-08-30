@@ -317,18 +317,6 @@ export default function UsersPage() {
                   />
                 </div>
               )}
-              {form.role === 'officer' && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium">Assigned Zone</label>
-                  <input
-                    type="text"
-                    value={form.assigned_zone}
-                    onChange={(e) => setForm({ ...form, assigned_zone: e.target.value })}
-                    className={inputClass}
-                    required={!editingUser}
-                  />
-                </div>
-              )}
               {error && (
                 <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-300">
                   {error}

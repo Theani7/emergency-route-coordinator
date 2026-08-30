@@ -206,19 +206,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ]);
     }
-    if (profile?.assignedZone != null) {
-      rows.addAll([
-        _divider(),
-        _detailRow(
-          text,
-          icon: Icons.location_on_outlined,
-          tint: _kGreenBadgeBg,
-          iconColor: _kGreenBadgeText,
-          label: 'Assigned zone',
-          value: profile!.assignedZone!,
-        ),
-      ]);
-    }
     return Container(
       decoration: BoxDecoration(
         color: kAuthCard,
