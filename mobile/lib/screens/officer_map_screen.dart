@@ -117,53 +117,110 @@ class _OfficerMapScreenState extends State<OfficerMapScreen> {
                     Positioned(
                       top: 12,
                       left: 12,
-                      child: GlassSurface(
-                        radius: 14,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: kAuthRedBadgeBg,
-                                borderRadius: BorderRadius.circular(9),
-                              ),
-                              child: const Icon(
-                                Icons.map_rounded,
-                                size: 16,
-                                color: kAuthRedLink,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GlassSurface(
+                            radius: 14,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  'Live map',
-                                  style: GoogleFonts.inter().copyWith(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: kAuthText,
+                                Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    color: kAuthRedBadgeBg,
+                                    borderRadius: BorderRadius.circular(9),
+                                  ),
+                                  child: const Icon(
+                                    Icons.map_rounded,
+                                    size: 16,
+                                    color: kAuthRedLink,
                                   ),
                                 ),
-                                Text(
-                                  '${ambulances.length} ambulance'
-                                  '${ambulances.length == 1 ? '' : 's'} active',
-                                  style: GoogleFonts.inter().copyWith(
-                                    fontSize: 11,
-                                    color: kAuthFaint,
-                                    fontFeatures: const [
-                                      FontFeature.tabularFigures(),
-                                    ],
-                                  ),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Live map',
+                                      style: GoogleFonts.inter().copyWith(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: kAuthText,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${ambulances.length} ambulance'
+                                      '${ambulances.length == 1 ? '' : 's'} active',
+                                      style: GoogleFonts.inter().copyWith(
+                                        fontSize: 11,
+                                        color: kAuthFaint,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
+                          ),
+                          if (_officerLat != null && _officerLon != null) ...[
+                            const SizedBox(height: 8),
+                            GlassSurface(
+                              radius: 14,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: kAuthBlueTint,
+                                      borderRadius: BorderRadius.circular(9),
+                                    ),
+                                    child: const Icon(
+                                      Icons.my_location_rounded,
+                                      size: 16,
+                                      color: kAuthBlue,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Your location',
+                                        style: GoogleFonts.inter().copyWith(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: kAuthText,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${_officerLat!.toStringAsFixed(4)}, '
+                                        '${_officerLon!.toStringAsFixed(4)}',
+                                        style: GoogleFonts.inter().copyWith(
+                                          fontSize: 11,
+                                          color: kAuthFaint,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                     ),
                     Positioned(
