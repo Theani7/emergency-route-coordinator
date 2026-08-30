@@ -49,13 +49,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final name = _nameCtrl.text.trim();
     // First send signup OTP
     try {
-      final api = context.read<ApiService>();
-      final authService = AuthService(api);
       if (_serverUrl != null && _serverUrl!.isNotEmpty) {
         final auth = context.read<AuthProvider>();
         await auth.configureServer(_serverUrl!);
       }
-      // Show loading via dialog? Use provider loading not needed - use local
+      final authService = context.read<AuthService>();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Sending OTP to $email...'), backgroundColor: kAuthText, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
       );

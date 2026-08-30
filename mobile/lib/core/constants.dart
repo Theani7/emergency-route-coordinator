@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// API and app constants.
 class AppConstants {
   /// Compile-time override: `flutter run --dart-define=API_BASE_URL=http://...`
@@ -5,15 +7,31 @@ class AppConstants {
       String.fromEnvironment('API_BASE_URL');
 
   /// Production server URL
-  static const String emulatorBaseUrl = 'https://sajiloroute-api.onrender.com';
+  static const String productionBaseUrl = 'https://sajiloroute-api.onrender.com';
 
-  static String get defaultBaseUrl =>
-      compileTimeBaseUrl.isNotEmpty ? compileTimeBaseUrl : emulatorBaseUrl;
+  /// Local development server URL
+  static const String localBaseUrl = 'http://localhost:8000';
 
-  static const String wsUrl = String.fromEnvironment(
-    'WS_BASE_URL',
-    defaultValue: 'wss://sajiloroute-api.onrender.com',
-  );
+  static String get defaultBaseUrl {
+    if (compileTimeBaseUrl.isNotEmpty) {
+      return compileTimeBaseUrl;
+    }
+    if (kIsWeb || kDebugMode) {
+      return localBaseUrl;
+    }
+    return productionBaseUrl;
+  }
+
+  static String get wsUrl {
+    const compileTimeWs = String.fromEnvironment('WS_BASE_URL');
+    if (compileTimeWs.isNotEmpty) {
+      return compileTimeWs;
+    }
+    if (kIsWeb || kDebugMode) {
+      return 'ws://localhost:8000';
+    }
+    return 'wss://sajiloroute-api.onrender.com';
+  }
 
   static const String tokenKey = 'access_token';
   static const String userIdKey = 'user_id';

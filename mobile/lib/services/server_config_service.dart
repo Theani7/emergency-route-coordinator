@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants.dart';
@@ -8,7 +9,10 @@ class ServerConfigService {
   Future<String> getApiBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(apiUrlKey);
-    if (saved != null && saved.isNotEmpty && !saved.contains('10.0.2.2')) {
+    if (saved != null &&
+        saved.isNotEmpty &&
+        !saved.contains('10.0.2.2') &&
+        !(kIsWeb && saved.contains('sajiloroute-api.onrender.com'))) {
       return _normalizeHttpUrl(saved);
     }
     return AppConstants.defaultBaseUrl;
