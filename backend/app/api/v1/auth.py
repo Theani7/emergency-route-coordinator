@@ -92,7 +92,7 @@ async def verify_signup_otp(
     clean_email = payload.email.strip().lower()
     otp_input = payload.otp.strip()
     result = await db.execute(
-        select(EmailVerificationOTP).where(EmailVerificationOTP.email == clean_email).order_by(EmailVerificationOTP.created_at.desc()).limit(1)
+        select(EmailVerificationOTP).where(func.lower(EmailVerificationOTP.email) == clean_email).order_by(EmailVerificationOTP.created_at.desc()).limit(1)
     )
     otp_entry = result.scalar_one_or_none()
     if not otp_entry:
@@ -123,13 +123,14 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
     # Enforce email verification via OTP
     clean_email = payload.email.strip().lower()
     settings = get_settings()
-    # Allow bypass for seed/test if no verification entry and payload has no otp but user is admin seed? No - enforce for public API
     # Check for verified OTP
-    otp_entry = None
     otp_entry = None
     if payload.otp:
         result = await db.execute(
-            select(EmailVerificationOTP).where(EmailVerificationOTP.email == clean_email).order_by(EmailVerificationOTP.created_at.desc()).limit(1)
+            select(EmailVerificationOTP)
+            .where(func.lower(EmailVerificationOTP.email) == clean_email)
+            .order_by(EmailVerificationOTP.created_at.desc())
+            .limit(1)
         )
         otp_entry = result.scalar_one_or_none()
         if not otp_entry or otp_entry.otp_code != payload.otp.strip():
@@ -142,7 +143,10 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
     else:
         # If OTP was requested for this email, enforce verified state; else allow (backward compat for tests/seed)
         result = await db.execute(
-            select(EmailVerificationOTP).where(EmailVerificationOTP.email == clean_email).order_by(EmailVerificationOTP.created_at.desc()).limit(1)
+            select(EmailVerificationOTP)
+            .where(func.lower(EmailVerificationOTP.email) == clean_email)
+            .order_by(EmailVerificationOTP.created_at.desc())
+            .limit(1)
         )
         otp_entry = result.scalar_one_or_none()
         if otp_entry is not None:
@@ -159,13 +163,12 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
     if payload.role == UserRole.ADMIN:
         raise HTTPException(status_code=400, detail="Admin accounts cannot be self-registered")
 
-    if payload.role == UserRole.DRIVER and not payload.vehicle_number:
-        raise HTTPException(status_code=400, detail="vehicle_number required for drivers")
     if payload.role == UserRole.DRIVER:
-        existing_ambulance = await db.execute(
-            select(Ambulance).where(Ambulance.vehicle_number == payload.vehicle_number)
-        )
-        if existing_ambulance.scalar_one_or_none():
+        if not payload.vehicle_number or not payload.vehicle_number.strip():
+            raise HTTPException(status_code=400, detail="vehicle_number is required for driver")
+        clean_vn = payload.vehicle_number.strip()
+        existing_amb = await db.execute(select(Ambulance).where(Ambulance.vehicle_number == clean_vn))
+        if existing_amb.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="vehicle_number already registered")
 
     initial_approval_status = (
@@ -175,8 +178,8 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
     )
 
     user = User(
-        name=payload.name,
-        email=payload.email,
+        name=payload.name.strip(),
+        email=clean_email,
         password_hash=await hash_password(payload.password),
         role=payload.role,
         approval_status=initial_approval_status,

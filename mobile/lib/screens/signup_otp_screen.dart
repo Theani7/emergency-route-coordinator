@@ -69,29 +69,31 @@ class _SignupOtpScreenState extends State<SignupOtpScreen> {
   }
 
   Future<void> _verifyAndRegister() async {
-    if (_otp.length != 6) {
+    if (_verifying) return;
+    final code = _otpKey.currentState?.otp ?? _otp;
+    if (code.length != 6) {
       setState(() => _error = 'Enter 6-digit OTP');
       return;
     }
     setState(() {
       _verifying = true;
       _error = null;
+      _otp = code;
     });
     try {
-      final api = context.read<ApiService>();
-      final authService = AuthService(api);
+      final authService = context.read<AuthService>();
       // Verify OTP first
-      await authService.verifySignupOtp(email: widget.email, otp: _otp);
+      await authService.verifySignupOtp(email: widget.email.trim(), otp: code.trim());
       // Then register with OTP
       final authProvider = context.read<AuthProvider>();
       final success = await authProvider.register(
-        name: widget.name,
-        email: widget.email,
+        name: widget.name.trim(),
+        email: widget.email.trim(),
         password: widget.password,
         role: widget.role,
-        vehicleNumber: widget.vehicleNumber,
-        assignedZone: widget.assignedZone,
-        otp: _otp,
+        vehicleNumber: widget.vehicleNumber?.trim(),
+        assignedZone: widget.assignedZone?.trim(),
+        otp: code.trim(),
       );
       if (!mounted) return;
       if (success) {
@@ -107,17 +109,24 @@ class _SignupOtpScreenState extends State<SignupOtpScreen> {
           (route) => false,
         );
       } else {
-        // authProvider.error contains detail
         setState(() => _error = context.read<AuthProvider>().error ?? 'Registration failed');
       }
     } catch (e) {
-      String msg = 'Invalid OTP. Try again.';
+      String msg = 'Verification failed. Please try again.';
       try {
         final dioErr = e as dynamic;
         final data = dioErr.response?.data;
-        if (data is Map && data['detail'] != null) msg = data['detail'].toString();
+        if (data is Map && data['detail'] != null) {
+          msg = data['detail'].toString();
+        } else if (data is String && data.isNotEmpty) {
+          msg = data;
+        } else if (dioErr.message != null) {
+          msg = dioErr.message.toString();
+        }
       } catch (_) {}
-      setState(() => _error = msg);
+      if (mounted) {
+        setState(() => _error = msg);
+      }
     } finally {
       if (mounted) setState(() => _verifying = false);
     }
@@ -129,9 +138,8 @@ class _SignupOtpScreenState extends State<SignupOtpScreen> {
       _error = null;
     });
     try {
-      final api = context.read<ApiService>();
-      final auth = AuthService(api);
-      await auth.sendSignupOtp(email: widget.email, name: widget.name);
+      final auth = context.read<AuthService>();
+      await auth.sendSignupOtp(email: widget.email.trim(), name: widget.name.trim());
       _otpKey.currentState?.clear();
       setState(() => _otp = '');
       _startTimer();
@@ -232,8 +240,9 @@ class _SignupOtpScreenState extends State<SignupOtpScreen> {
                             onPressed: _verifyAndRegister,
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text("Didn't receive code? ", style: text.copyWith(fontSize: 13, color: kAuthMuted)),
                               _canResend

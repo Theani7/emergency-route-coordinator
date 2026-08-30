@@ -158,6 +158,7 @@ class _AmbulanceAppState extends State<AmbulanceApp> {
     return MultiProvider(
       providers: [
         Provider<ApiService>.value(value: widget.api),
+        Provider<AuthService>.value(value: _authService),
         ChangeNotifierProvider.value(value: _authProvider),
         ChangeNotifierProvider(
           create: (_) => EmergencyProvider(

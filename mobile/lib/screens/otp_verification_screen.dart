@@ -54,23 +54,26 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   Future<void> _verify() async {
-    if (_otp.length != 6) {
+    if (_loading) return;
+    final code = _otpKey.currentState?.otp ?? _otp;
+    if (code.length != 6) {
       setState(() => _error = 'Enter 6-digit OTP');
       return;
     }
     setState(() {
       _loading = true;
       _error = null;
+      _otp = code;
     });
     try {
       final api = context.read<ApiService>();
       final auth = AuthService(api);
-      await auth.verifyOtp(widget.email, _otp);
+      await auth.verifyOtp(widget.email.trim(), code.trim());
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => ResetPasswordScreen(email: widget.email, otp: _otp),
+          builder: (_) => ResetPasswordScreen(email: widget.email.trim(), otp: code.trim()),
         ),
       );
     } catch (e) {
@@ -78,9 +81,17 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       try {
         final dioErr = e as dynamic;
         final data = dioErr.response?.data;
-        if (data is Map && data['detail'] != null) msg = data['detail'].toString();
+        if (data is Map && data['detail'] != null) {
+          msg = data['detail'].toString();
+        } else if (data is String && data.isNotEmpty) {
+          msg = data;
+        } else if (dioErr.message != null) {
+          msg = dioErr.message.toString();
+        }
       } catch (_) {}
-      setState(() => _error = msg);
+      if (mounted) {
+        setState(() => _error = msg);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
