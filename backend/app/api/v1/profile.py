@@ -1,12 +1,16 @@
 """Profile management endpoints for drivers and officers."""
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import RequireAnyAuth, get_db
+from app.api.deps import RequireAnyAuth, RequireOfficer, get_db
 from app.core.security import hash_password, verify_password
+from app.models.officer import TrafficOfficer
 from app.models.user import User
 from app.schemas.profile import ChangePasswordRequest, ProfileResponse, ProfileUpdate
 
@@ -27,6 +31,9 @@ def _build_profile(user: User) -> ProfileResponse:
         data.assigned_zone = user.officer_profile.assigned_zone
         data.zone_latitude = user.officer_profile.zone_latitude
         data.zone_longitude = user.officer_profile.zone_longitude
+        data.current_latitude = user.officer_profile.current_latitude
+        data.current_longitude = user.officer_profile.current_longitude
+        data.location_updated_at = user.officer_profile.location_updated_at
     return data
 
 
@@ -91,3 +98,27 @@ async def change_password(
     user.password_hash = await hash_password(payload.new_password)
     await db.flush()
     return {"message": "Password changed successfully"}
+
+
+class LocationUpdate(BaseModel):
+    latitude: float
+    longitude: float
+
+
+@router.post("/location")
+async def update_location(
+    payload: LocationUpdate,
+    current_user: RequireOfficer,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(TrafficOfficer).where(TrafficOfficer.user_id == current_user.id)
+    )
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Officer profile not found")
+    profile.current_latitude = payload.latitude
+    profile.current_longitude = payload.longitude
+    profile.location_updated_at = datetime.now(timezone.utc)
+    await db.flush()
+    return {"message": "Location updated"}

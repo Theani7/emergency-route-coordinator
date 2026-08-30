@@ -209,7 +209,12 @@ class EmergencyService:
 
         officers = await self._get_officers_with_zones(db)
         officer_data = [
-            (o.user_id, o.zone_latitude, o.zone_longitude, o.zone_radius_km)
+            (
+                o.user_id,
+                o.current_latitude if o.current_latitude is not None else o.zone_latitude,
+                o.current_longitude if o.current_longitude is not None else o.zone_longitude,
+                o.zone_radius_km,
+            )
             for o in officers
         ]
         from app.ai.route_optimizer import RouteOptimizer

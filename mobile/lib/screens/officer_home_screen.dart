@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,8 @@ import '../providers/junction_provider.dart';
 import '../providers/live_ambulance_provider.dart';
 import '../providers/notification_provider.dart';
 import '../models/notification_model.dart';
+import '../services/gps_service.dart';
+import '../services/api_service.dart';
 import '../widgets/skeleton_widgets.dart';
 import '../widgets/auth_widgets.dart';
 import 'officer_map_screen.dart';
@@ -32,6 +35,7 @@ class OfficerHomeScreen extends StatefulWidget {
 class _OfficerHomeScreenState extends State<OfficerHomeScreen> {
   int _selectedIndex = 0;
   LiveAmbulanceProvider? _live;
+  Timer? _locationTimer;
 
   @override
   void didChangeDependencies() {
@@ -48,11 +52,29 @@ class _OfficerHomeScreenState extends State<OfficerHomeScreen> {
       context.read<LiveAmbulanceProvider>().startPolling();
       context.read<JunctionProvider>().loadClearanceHistory();
       await context.read<ChatProvider>().loadSessions();
+      _startLocationTracking();
+    });
+  }
+
+  void _startLocationTracking() {
+    _locationTimer?.cancel();
+    _locationTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      try {
+        final position = await GpsTrackingService.bestPosition();
+        if (position != null && mounted) {
+          final api = context.read<ApiService>();
+          await api.post('/api/v1/profile/location', data: {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+          });
+        }
+      } catch (_) {}
     });
   }
 
   @override
   void dispose() {
+    _locationTimer?.cancel();
     _live?.stopPolling();
     super.dispose();
   }
