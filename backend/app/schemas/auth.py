@@ -15,6 +15,17 @@ class UserRegister(BaseModel):
     assigned_zone: str | None = Field(None, description="Required for officers")
     zone_latitude: float | None = None
     zone_longitude: float | None = None
+    otp: str | None = Field(None, min_length=6, max_length=6, description="6-digit email verification OTP")
+
+
+class SendSignupOtpRequest(BaseModel):
+    email: EmailStr
+    name: str | None = Field(None, min_length=1, max_length=255)
+
+
+class VerifySignupOtpRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
 
 
 class UserLogin(BaseModel):
@@ -48,3 +59,23 @@ class UserResponse(BaseModel):
     assigned_zone: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6, description="6-digit OTP")
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
+class MessageResponse(BaseModel):
+    message: str
+    detail: str | None = None

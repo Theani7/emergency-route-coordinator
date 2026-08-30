@@ -51,6 +51,21 @@ class Settings(BaseSettings):
     # Optional Redis URL for persistent caching (e.g. redis://localhost:6379/0)
     redis_url: str = ""
 
+    # Email OTP (Gmail App Password)
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_from_name: str = "Sajiloroute"
+    smtp_use_tls: bool = True
+
+    # OTP settings
+    otp_expire_minutes: int = 10
+    otp_length: int = 6
+    otp_max_attempts: int = 5
+    otp_resend_cooldown_seconds: int = 60
+
     log_level: str = "INFO"
 
     @field_validator("cors_origins", mode="before")
