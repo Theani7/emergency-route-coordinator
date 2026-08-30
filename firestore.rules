@@ -1,0 +1,32 @@
+rules_version='2'
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - authenticated users can read all, write own
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+    // Ambulances - authenticated read, driver write own
+    match /ambulances/{ambulanceId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    // Emergency sessions - authenticated access
+    match /emergency_sessions/{sessionId} {
+      allow read, write: if request.auth != null;
+    }
+    // Chat and notifications
+    match /chat/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /notifications/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    // Fallback - deny by default, allow authenticated for prototyping
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

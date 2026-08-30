@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "222008281166",
+    "project_id": "gency-fd12f",
+    "storage_bucket": "gency-fd12f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222008281166:android:929279b9efe84200a79b1f",
+        "android_client_info": {
+          "package_name": "com.ambulance.coordination.ambulance_coordination"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222008281166-buil7m7u8c9e4tntst6b7g1jk8hq8gg5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ambulance.coordination.ambulance_coordination",
+            "certificate_hash": "a0f901625b99f20cb6c13d3536e354d36c9c77ba"
+          }
+        },
+        {
+          "client_id": "222008281166-lld5nv36n894s5qrcqdispl516jo3vtc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6ueUPhed3AkGe9IB1Dt0iakTDaEJwPFA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222008281166-lld5nv36n894s5qrcqdispl516jo3vtc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

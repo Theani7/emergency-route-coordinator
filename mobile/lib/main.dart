@@ -11,6 +11,7 @@ import 'providers/live_ambulance_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/profile_provider.dart';
 import 'screens/driver_home_screen.dart';
+import 'screens/forgot_password_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/officer_home_screen.dart';
@@ -33,22 +34,29 @@ import 'core/map_cache.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:flutter/foundation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase only on non-web platforms for now,
-  // as web requires FirebaseOptions to be explicitly provided.
-  if (!kIsWeb) {
-    try {
-      await Firebase.initializeApp();
-      // Request permission for iOS (Android 13+ will prompt automatically)
-      await FirebaseMessaging.instance.requestPermission();
-    } catch (e) {
-      debugPrint("Firebase initialization failed: $e");
+  // Initialize Firebase with platform-specific options (gency-fd12f)
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // Initialize Google Sign-In for mobile (skip web to avoid DWDS hang - see firebase-auth skill)
+    if (!kIsWeb) {
+      await GoogleSignIn.instance.initialize();
     }
+    // Request permission for iOS (Android 13+ will prompt automatically)
+    if (!kIsWeb) {
+      await FirebaseMessaging.instance.requestPermission();
+    }
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
   }
 
   await Hive.initFlutter();
@@ -103,6 +111,7 @@ class _AmbulanceAppState extends State<AmbulanceApp> {
       GoRoute(path: '/', builder: (_, __) => const PremiumSplashScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+      GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(path: '/driver', builder: (_, __) => const DriverHomeScreen()),
       GoRoute(path: '/officer', builder: (_, __) => const OfficerHomeScreen()),
     ],

@@ -74,6 +74,7 @@ class AuthProvider extends ChangeNotifier {
     required String role,
     String? vehicleNumber,
     String? assignedZone,
+    String? otp,
   }) async {
     _loading = true;
     _error = null;
@@ -86,6 +87,7 @@ class AuthProvider extends ChangeNotifier {
         role: role,
         vehicleNumber: vehicleNumber,
         assignedZone: assignedZone,
+        otp: otp,
       );
       _user = user;
       _loading = false;
@@ -93,21 +95,50 @@ class AuthProvider extends ChangeNotifier {
       _connectLive();
       return true;
     } on DioException catch (e) {
-      final detail = e.response?.data;
-      if (detail is Map && detail['detail'] != null) {
-        _error = detail['detail'].toString();
-      } else {
-        _error = 'Registration failed. Please try again.';
-      }
+      _error = _messageForRegisterError(e);
       _loading = false;
       notifyListeners();
       return false;
     } catch (e) {
-      _error = 'Registration failed. Check server connection.';
+      _error = 'Registration failed: ${e.toString()}';
       _loading = false;
       notifyListeners();
       return false;
     }
+  }
+
+  String _messageForRegisterError(DioException e) {
+    final data = e.response?.data;
+    // Backend returns {"detail":"..."} or {"detail":"...","errors":[...]}
+    if (data is Map && data['detail'] != null) {
+      final detail = data['detail'].toString();
+      // Show first validation error if present for field-level clarity
+      if (data['errors'] is List && (data['errors'] as List).isNotEmpty) {
+        final first = (data['errors'] as List).first;
+        if (first is Map && first['msg'] != null) {
+          final loc = (first['loc'] is List) ? (first['loc'] as List).last.toString() : '';
+          return loc.isNotEmpty ? '$loc: ${first['msg']}' : first['msg'].toString();
+        }
+      }
+      return detail;
+    }
+    if (data is String && data.isNotEmpty) return data;
+    if (e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      final baseUrl = _authService.baseUrl;
+      if (baseUrl.contains('10.0.2.2')) {
+        return 'Cannot reach server at $baseUrl. On physical phone use your PC IP (e.g. http://192.168.1.79:8000). Check Server Settings (top-right icon).';
+      }
+      return 'Cannot reach server at $baseUrl. Check Server URL, ensure backend is running (http://localhost:8000/health), and phone/PC are on same Wi-Fi.';
+    }
+    if (e.response?.statusCode == 400) return data?.toString() ?? 'Registration failed (400). Check email/vehicle format.';
+    if (e.response?.statusCode == 422) {
+      // Fallback for validation errors without detail map
+      return 'Validation failed: ${data?.toString() ?? e.message}';
+    }
+    return 'Registration failed (${e.response?.statusCode ?? e.type.name}): ${e.message}';
   }
 
   String _messageForDioError(DioException e) {
@@ -172,6 +203,17 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       return false;
     }
+  }
+
+  void setError(String msg) {
+    _error = msg;
+    _loading = false;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
   }
 
   Future<void> updateLocalName(String name) async {

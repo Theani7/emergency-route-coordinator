@@ -41,6 +41,14 @@ class AuthService {
     return user;
   }
 
+  Future<void> sendSignupOtp({required String email, String? name}) async {
+    await _api.post('/api/v1/auth/send-signup-otp', data: {'email': email, if (name != null) 'name': name});
+  }
+
+  Future<void> verifySignupOtp({required String email, required String otp}) async {
+    await _api.post('/api/v1/auth/verify-signup-otp', data: {'email': email, 'otp': otp});
+  }
+
   Future<UserModel> register({
     required String name,
     required String email,
@@ -48,6 +56,7 @@ class AuthService {
     required String role,
     String? vehicleNumber,
     String? assignedZone,
+    String? otp,
   }) async {
     final data = <String, dynamic>{
       'name': name,
@@ -57,6 +66,7 @@ class AuthService {
     };
     if (vehicleNumber != null) data['vehicle_number'] = vehicleNumber;
     if (assignedZone != null) data['assigned_zone'] = assignedZone;
+    if (otp != null) data['otp'] = otp;
 
     await _api.post('/api/v1/auth/register', data: data);
 
@@ -124,6 +134,22 @@ class AuthService {
   Future<void> saveName(String name) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.userNameKey, name);
+  }
+
+  Future<void> forgotPassword(String email) async {
+    await _api.post('/api/v1/auth/forgot-password', data: {'email': email});
+  }
+
+  Future<void> verifyOtp(String email, String otp) async {
+    await _api.post('/api/v1/auth/verify-otp', data: {'email': email, 'otp': otp});
+  }
+
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    await _api.post('/api/v1/auth/reset-password', data: {
+      'email': email,
+      'otp': otp,
+      'new_password': newPassword,
+    });
   }
 
   Future<void> _saveSession(UserModel user) async {
