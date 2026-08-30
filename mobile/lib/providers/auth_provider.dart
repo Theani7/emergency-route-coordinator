@@ -22,9 +22,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   UserModel? get user => _user;
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated => _user != null && _user?.token != null;
   bool get loading => _loading;
   String? get error => _error;
+  String? get errorMessage => _error;
 
   Future<void> init() async {
     _loading = true;
@@ -80,7 +81,7 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final user = await _authService.register(
+      await _authService.register(
         name: name,
         email: email,
         password: password,
@@ -89,10 +90,8 @@ class AuthProvider extends ChangeNotifier {
         assignedZone: assignedZone,
         otp: otp,
       );
-      _user = user;
       _loading = false;
       notifyListeners();
-      _connectLive();
       return true;
     } on DioException catch (e) {
       _error = _messageForRegisterError(e);
@@ -146,6 +145,9 @@ class AuthProvider extends ChangeNotifier {
     if (data is Map && data['detail'] != null) {
       return data['detail'].toString();
     }
+    if (data is String && data.isNotEmpty) {
+      return data;
+    }
     if (e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
@@ -160,6 +162,12 @@ class AuthProvider extends ChangeNotifier {
     }
     if (e.response?.statusCode == 401) {
       return 'Invalid email or password.';
+    }
+    if (e.response?.statusCode == 403) {
+      return 'Your account is pending administrator approval or access was denied.';
+    }
+    if (e.response?.statusCode == 429) {
+      return 'Too many login attempts. Please try again later.';
     }
     return 'Login failed (${e.response?.statusCode ?? e.type.name}).';
   }

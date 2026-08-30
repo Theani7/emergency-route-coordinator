@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/otp_input_widget.dart';
+import 'registration_pending_screen.dart';
 
 class SignupOtpScreen extends StatefulWidget {
   const SignupOtpScreen({
@@ -94,16 +95,17 @@ class _SignupOtpScreenState extends State<SignupOtpScreen> {
       );
       if (!mounted) return;
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Account created! Welcome ${widget.name}', style: GoogleFonts.inter(fontSize: 13)),
-            backgroundColor: kAuthGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => RegistrationPendingScreen(
+              name: widget.name,
+              email: widget.email,
+              role: widget.role,
+            ),
           ),
+          (route) => false,
         );
-        // Pop to login (auth will auto-navigate via GoRouter)
-        Navigator.popUntil(context, (route) => route.isFirst);
       } else {
         // authProvider.error contains detail
         setState(() => _error = context.read<AuthProvider>().error ?? 'Registration failed');

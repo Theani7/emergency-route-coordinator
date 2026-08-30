@@ -9,6 +9,7 @@ import 'register_screen.dart';
 
 import '../services/server_config_service.dart';
 import 'forgot_password_screen.dart';
+import 'registration_pending_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -109,6 +110,101 @@ class _LoginScreenState extends State<LoginScreen> {
             },
             child: const Text('Save & Apply', style: TextStyle(color: Colors.white)),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showApprovalStatusDialog({
+    required BuildContext context,
+    required bool isPending,
+    required String email,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: Icon(
+          isPending ? Icons.hourglass_top_rounded : Icons.cancel_outlined,
+          color: isPending ? const Color(0xFFF59E0B) : const Color(0xFFEF4444),
+          size: 40,
+        ),
+        title: Text(
+          isPending ? 'Account Pending Approval' : 'Registration Rejected',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        content: Text(
+          isPending
+              ? 'Your account is currently pending administrator approval. Please wait for confirmation before logging in.'
+              : 'Your registration request was rejected by an administrator.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            color: const Color(0xFFCBD5E1),
+            height: 1.4,
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          if (isPending) ...[
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Dismiss',
+                style: GoogleFonts.inter(color: Colors.grey[400]),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF59E0B),
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RegistrationPendingScreen(
+                      name: '',
+                      email: email,
+                      role: '',
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'View Status',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ] else ...[
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'OK',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -239,10 +335,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                 if (!_formKey.currentState!.validate()) {
                                   return;
                                 }
-                                await auth.login(
-                                  _emailCtrl.text.trim(),
+                                final email = _emailCtrl.text.trim();
+                                final success = await auth.login(
+                                  email,
                                   _passCtrl.text,
                                 );
+                                if (!success && mounted) {
+                                  final err = (auth.error ?? '').toLowerCase();
+                                  if (err.contains('pending') || err.contains('approval')) {
+                                    _showApprovalStatusDialog(
+                                      context: context,
+                                      isPending: true,
+                                      email: email,
+                                    );
+                                  } else if (err.contains('rejected')) {
+                                    _showApprovalStatusDialog(
+                                      context: context,
+                                      isPending: false,
+                                      email: email,
+                                    );
+                                  }
+                                }
                               },
                             ),
                             const SizedBox(height: 12),

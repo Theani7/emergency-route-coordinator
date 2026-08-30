@@ -14,6 +14,7 @@ import 'screens/driver_home_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/registration_pending_screen.dart';
 import 'screens/officer_home_screen.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
@@ -96,10 +97,10 @@ class _AmbulanceAppState extends State<AmbulanceApp> {
       final loggedIn = _authProvider.isAuthenticated;
       final path = state.matchedLocation;
       if (!loggedIn) {
-        if (path == '/login' || path == '/register') return null;
+        if (path == '/login' || path == '/register' || path == '/pending' || path == '/forgot-password') return null;
         return '/login';
       }
-      if (path == '/login' || path == '/register' || path == '/') {
+      if (path == '/login' || path == '/register' || path == '/pending' || path == '/forgot-password' || path == '/') {
         final role = _authProvider.user?.role;
         if (role == UserRole.driver) return '/driver';
         if (role == UserRole.officer) return '/officer';
@@ -111,6 +112,17 @@ class _AmbulanceAppState extends State<AmbulanceApp> {
       GoRoute(path: '/', builder: (_, __) => const PremiumSplashScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+      GoRoute(
+        path: '/pending',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return RegistrationPendingScreen(
+            name: extra?['name'] as String? ?? '',
+            email: extra?['email'] as String? ?? '',
+            role: extra?['role'] as String? ?? '',
+          );
+        },
+      ),
       GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(path: '/driver', builder: (_, __) => const DriverHomeScreen()),
       GoRoute(path: '/officer', builder: (_, __) => const OfficerHomeScreen()),

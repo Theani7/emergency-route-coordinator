@@ -7,13 +7,12 @@ class OfflineQueueService {
   factory OfflineQueueService() => _instance;
   OfflineQueueService._internal();
 
-  late final Box _box;
+  Box get _box => Hive.box('offline_queue');
   Dio? _dio;
   bool _isReplaying = false;
 
   void init(Dio dio) {
     _dio = dio;
-    _box = Hive.box('offline_queue');
     Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
       if (results.isNotEmpty && !results.contains(ConnectivityResult.none)) {
         replay();

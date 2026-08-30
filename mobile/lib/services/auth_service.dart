@@ -68,26 +68,20 @@ class AuthService {
     if (assignedZone != null) data['assigned_zone'] = assignedZone;
     if (otp != null) data['otp'] = otp;
 
-    await _api.post('/api/v1/auth/register', data: data);
+    final res = await _api.post('/api/v1/auth/register', data: data);
+    final regData = res.data is Map<String, dynamic>
+        ? res.data as Map<String, dynamic>
+        : <String, dynamic>{};
 
-    final loginRes = await _api.post('/api/v1/auth/login', data: {
-      'email': email,
-      'password': password,
-    });
-    final loginData = loginRes.data as Map<String, dynamic>;
-    final user = UserModel(
-      id: loginData['user_id'] ?? loginData['id'],
-      name: loginData['name'] ?? name,
+    return UserModel(
+      id: regData['id'] is int ? regData['id'] as int : 0,
+      name: regData['name']?.toString() ?? name,
       email: email,
       role: UserRole.values.firstWhere(
-        (r) => r.name == loginData['role'].toString().toLowerCase(),
+        (r) => r.name == (regData['role'] ?? role).toString().toLowerCase(),
         orElse: () => UserRole.driver,
       ),
-      token: loginData['access_token'],
     );
-    _api.setToken(user.token);
-    await _saveSession(user);
-    return user;
   }
 
   Future<UserModel?> autoLogin() async {
