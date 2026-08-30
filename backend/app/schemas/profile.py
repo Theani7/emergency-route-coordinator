@@ -11,6 +11,7 @@ class ProfileResponse(BaseModel):
     name: str
     email: str
     role: str
+    approval_status: Optional[str] = "approved"
     vehicle_number: Optional[str] = None
     assigned_zone: Optional[str] = None
     zone_latitude: Optional[float] = None

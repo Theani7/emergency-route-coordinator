@@ -55,6 +55,7 @@ class UserResponse(BaseModel):
     name: str
     email: str
     role: UserRole
+    approval_status: str = "approved"
     vehicle_number: str | None = None
     assigned_zone: str | None = None
 

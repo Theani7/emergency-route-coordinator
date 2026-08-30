@@ -3,7 +3,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, Integer, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -13,6 +13,12 @@ class UserRole(str, enum.Enum):
     ADMIN = "admin"
     DRIVER = "driver"
     OFFICER = "officer"
+
+
+class UserApprovalStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class User(Base):
@@ -33,6 +39,24 @@ class User(Base):
         ),
         nullable=False,
         index=True,
+    )
+    approval_status: Mapped[UserApprovalStatus] = mapped_column(
+        Enum(
+            UserApprovalStatus,
+            name="user_approval_status",
+            values_callable=lambda x: [e.value for e in x],
+            native_enum=False,
+        ),
+        default=UserApprovalStatus.APPROVED,
+        server_default="approved",
+        nullable=False,
+        index=True,
+    )
+    approved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
+    approved_by: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, default=None
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
