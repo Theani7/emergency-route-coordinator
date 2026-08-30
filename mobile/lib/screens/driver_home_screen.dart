@@ -976,6 +976,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 destLon: active?.destLon,
                 routePolyline: active?.routePolyline,
                 showTrafficOverlay: true,
+                showCurrentLocation: true,
+                currentLocationLat: location.lat,
+                currentLocationLon: location.lon,
               ),
               if (emergency.isEmergencyActive && active != null)
                 Positioned(

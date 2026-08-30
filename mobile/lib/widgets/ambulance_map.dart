@@ -1,4 +1,5 @@
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_cache/flutter_map_cache.dart';
 import '../core/map_cache.dart';
@@ -23,6 +24,9 @@ class AmbulanceMap extends StatefulWidget {
   final bool showTrafficOverlay;
   final double? officerLat;
   final double? officerLon;
+  final double? currentLocationLat;
+  final double? currentLocationLon;
+  final bool showCurrentLocation;
 
   const AmbulanceMap({
     super.key,
@@ -36,6 +40,9 @@ class AmbulanceMap extends StatefulWidget {
     this.showTrafficOverlay = true,
     this.officerLat,
     this.officerLon,
+    this.currentLocationLat,
+    this.currentLocationLon,
+    this.showCurrentLocation = false,
   });
 
   @override
@@ -60,10 +67,13 @@ class LiveAmbulanceMarker {
   });
 }
 
-class _AmbulanceMapState extends State<AmbulanceMap> {
+class _AmbulanceMapState extends State<AmbulanceMap>
+    with SingleTickerProviderStateMixin {
   final MapController _mapController = MapController();
   List<CircleMarker> _trafficCircles = [];
   bool _mapReady = false;
+  Timer? _pulseTimer;
+  double _pulseRadius = 0;
 
   @override
   void initState() {
@@ -72,6 +82,31 @@ class _AmbulanceMapState extends State<AmbulanceMap> {
       _fitToContent();
       if (widget.showTrafficOverlay) _loadTraffic();
     });
+    if (widget.showCurrentLocation) {
+      _pulseTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+        if (mounted) {
+          setState(() {
+            _pulseRadius = (_pulseRadius + 2) % 30;
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseTimer?.cancel();
+    super.dispose();
+  }
+
+  void centerOnCurrentLocation() {
+    if (widget.currentLocationLat != null &&
+        widget.currentLocationLon != null) {
+      _mapController.move(
+        LatLng(widget.currentLocationLat!, widget.currentLocationLon!),
+        15.0,
+      );
+    }
   }
 
   Future<void> _loadTraffic() async {
@@ -232,6 +267,30 @@ class _AmbulanceMapState extends State<AmbulanceMap> {
       ));
     }
 
+    final circles = <CircleMarker>[];
+    if (widget.showCurrentLocation &&
+        widget.currentLocationLat != null &&
+        widget.currentLocationLon != null) {
+      final lat = widget.currentLocationLat!;
+      final lon = widget.currentLocationLon!;
+      circles.add(CircleMarker(
+        point: LatLng(lat, lon),
+        color: const Color(0xFF4285F4).withValues(alpha: 0.3),
+        radius: 20 + _pulseRadius,
+        useRadiusInMeter: false,
+        borderStrokeWidth: 2,
+        borderColor: const Color(0xFF4285F4),
+      ));
+      circles.add(CircleMarker(
+        point: LatLng(lat, lon),
+        color: const Color(0xFF4285F4),
+        radius: 8,
+        useRadiusInMeter: false,
+        borderStrokeWidth: 2,
+        borderColor: Colors.white,
+      ));
+    }
+
     final polylines = <Polyline>[
       if (routePoints.isNotEmpty)
         Polyline(points: routePoints, color: Colors.red, strokeWidth: 5),
@@ -268,7 +327,22 @@ class _AmbulanceMapState extends State<AmbulanceMap> {
             settings.showTrafficOverlay)
           CircleLayer(circles: _trafficCircles),
         if (polylines.isNotEmpty) PolylineLayer(polylines: polylines),
+        if (circles.isNotEmpty) CircleLayer(circles: circles),
         MarkerLayer(markers: markers),
+        if (widget.showCurrentLocation)
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: FloatingActionButton.small(
+                heroTag: 'my_location',
+                onPressed: centerOnCurrentLocation,
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF4285F4),
+                child: const Icon(Icons.my_location),
+              ),
+            ),
+          ),
       ],
     );
   }
