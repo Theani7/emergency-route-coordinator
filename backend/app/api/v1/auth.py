@@ -17,7 +17,7 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.models.ambulance import Ambulance, AmbulanceStatus
 from app.models.officer import TrafficOfficer
 from app.models.otp import EmailVerificationOTP, PasswordResetOTP
-from app.models.user import User, UserRole
+from app.models.user import User, UserApprovalStatus, UserRole
 from app.schemas.auth import (
     ForgotPasswordRequest,
     MessageResponse,
@@ -168,11 +168,18 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
         if existing_ambulance.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="vehicle_number already registered")
 
+    initial_approval_status = (
+        UserApprovalStatus.APPROVED
+        if payload.role == UserRole.ADMIN
+        else UserApprovalStatus.PENDING
+    )
+
     user = User(
         name=payload.name,
         email=payload.email,
         password_hash=await hash_password(payload.password),
         role=payload.role,
+        approval_status=initial_approval_status,
     )
     db.add(user)
     try:
@@ -257,6 +264,17 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
+        )
+
+    if user.approval_status == UserApprovalStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is pending administrator approval.",
+        )
+    if user.approval_status == UserApprovalStatus.REJECTED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your registration request was rejected by an administrator.",
         )
 
     if user.failed_login_attempts or user.locked_until:
