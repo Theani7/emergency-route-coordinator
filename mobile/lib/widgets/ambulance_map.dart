@@ -309,42 +309,47 @@ class _AmbulanceMapState extends State<AmbulanceMap>
     );
 
     return SizedBox.expand(
-      child: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCenter: center,
-          initialZoom: 13,
-          minZoom: 12,
-          maxZoom: 18,
-          onMapReady: () => _mapReady = true,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.ambulance.coordination',
-            tileProvider: CachedTileProvider(store: mapCacheStore),
+      child: RepaintBoundary(
+        child: FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: center,
+            initialZoom: 13,
+            minZoom: 12,
+            maxZoom: 18,
+            onMapReady: () => _mapReady = true,
           ),
-          if ((widget.showTrafficOverlay && _trafficCircles.isNotEmpty) &&
-              settings.showTrafficOverlay)
-            CircleLayer(circles: _trafficCircles),
-          if (polylines.isNotEmpty) PolylineLayer(polylines: polylines),
-          if (circles.isNotEmpty) CircleLayer(circles: circles),
-          MarkerLayer(markers: markers),
-          if (widget.showCurrentLocation)
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: FloatingActionButton.small(
-                  heroTag: 'my_location',
-                  onPressed: centerOnCurrentLocation,
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF4285F4),
-                  child: const Icon(Icons.my_location),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.ambulance.coordination',
+              tileProvider: CachedTileProvider(store: mapCacheStore),
+              errorTileCallback: (tile, error, stackTrace) {
+                debugPrint('Tile load error: $error');
+              },
+            ),
+            if ((widget.showTrafficOverlay && _trafficCircles.isNotEmpty) &&
+                settings.showTrafficOverlay)
+              CircleLayer(circles: _trafficCircles),
+            if (polylines.isNotEmpty) PolylineLayer(polylines: polylines),
+            if (circles.isNotEmpty) CircleLayer(circles: circles),
+            MarkerLayer(markers: markers),
+            if (widget.showCurrentLocation)
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: FloatingActionButton.small(
+                    heroTag: 'my_location',
+                    onPressed: centerOnCurrentLocation,
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF4285F4),
+                    child: const Icon(Icons.my_location),
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

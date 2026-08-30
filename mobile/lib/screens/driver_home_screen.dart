@@ -268,9 +268,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   ),
                   _navItem(
                     index: 1,
-                    icon: Icons.route_outlined,
-                    selectedIcon: Icons.route_rounded,
-                    label: 'Trips',
+                    icon: Icons.map_outlined,
+                    selectedIcon: Icons.map_rounded,
+                    label: 'Map',
                   ),
                   _navItem(
                     index: 2,
