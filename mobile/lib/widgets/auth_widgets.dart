@@ -161,71 +161,14 @@ class GlassBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Container(color: kAuthBg),
-        IgnorePointer(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Positioned(
-                top: -160,
-                left: -120,
-                child: _blob(
-                  radius: 360,
-                  color: kAuthRed.withValues(alpha: 0.10),
-                ),
-              ),
-              Positioned(
-                top: -80,
-                right: -140,
-                child: _blob(
-                  radius: 320,
-                  color: kAuthBlue.withValues(alpha: 0.09),
-                ),
-              ),
-              Positioned(
-                bottom: -180,
-                left: -100,
-                child: _blob(
-                  radius: 380,
-                  color: kAuthOrange.withValues(alpha: 0.08),
-                ),
-              ),
-              Positioned(
-                bottom: 40,
-                right: -60,
-                child: _blob(
-                  radius: 260,
-                  color: _kGreenBgBlob.withValues(alpha: 0.07),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (child case final Widget c) c,
-      ],
-    );
-  }
-
-  Widget _blob({required double radius, required Color color}) {
     return Container(
-      width: radius,
-      height: radius,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          center: Alignment.center,
-          radius: 1,
-          colors: [color, color.withValues(alpha: 0)],
-        ),
-      ),
+      width: double.infinity,
+      height: double.infinity,
+      color: kAuthBg,
+      child: child,
     );
   }
 }
-
-const Color _kGreenBgBlob = Color(0xFF2F9E63);
 
 class AuthBadge extends StatelessWidget {
   const AuthBadge({super.key});
