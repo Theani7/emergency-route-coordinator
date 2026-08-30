@@ -37,18 +37,23 @@ class _OfficerMapScreenState extends State<OfficerMapScreen> {
     });
   }
 
+  Future<void> _updateCurrentLocation() async {
+    try {
+      final position = await GpsTrackingService.bestPosition();
+      if (position != null && mounted) {
+        setState(() {
+          _officerLat = position.latitude;
+          _officerLon = position.longitude;
+        });
+      }
+    } catch (_) {}
+  }
+
   void _startLocationTracking() {
     _locationTimer?.cancel();
-    _locationTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-      try {
-        final position = await GpsTrackingService.bestPosition();
-        if (position != null && mounted) {
-          setState(() {
-            _officerLat = position.latitude;
-            _officerLon = position.longitude;
-          });
-        }
-      } catch (_) {}
+    _updateCurrentLocation();
+    _locationTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      _updateCurrentLocation();
     });
   }
 
@@ -82,38 +87,33 @@ class _OfficerMapScreenState extends State<OfficerMapScreen> {
               Expanded(
                 child: Stack(
                   children: [
-                    if (ambulances.isEmpty)
-                      const AuthEmptyState(
-                        icon: Icons.map_rounded,
-                        title: 'No active ambulances',
-                        hint:
-                            'Alerts appear here as soon as a driver starts an '
-                            'emergency trip.',
-                      )
-                    else
-                      AmbulanceMap(
-                        ambulanceLat: selected?.latitude,
-                        ambulanceLon: selected?.longitude,
-                        destLat: selected?.destLat,
-                        destLon: selected?.destLon,
-                        routePolyline: selected?.routePolyline,
-                        officerLat: _officerLat,
-                        officerLon: _officerLon,
-                        extraAmbulances: ambulances
-                            .where(
-                                (a) => a.ambulanceId != selected?.ambulanceId)
-                            .map(
-                              (a) => LiveAmbulanceMarker(
-                                lat: a.latitude,
-                                lon: a.longitude,
-                                label: a.vehicleNumber,
-                                routePolyline: a.routePolyline,
-                                destLat: a.destLat,
-                                destLon: a.destLon,
-                              ),
-                            )
-                            .toList(),
-                      ),
+                    AmbulanceMap(
+                      ambulanceLat: selected?.latitude,
+                      ambulanceLon: selected?.longitude,
+                      destLat: selected?.destLat,
+                      destLon: selected?.destLon,
+                      routePolyline: selected?.routePolyline,
+                      officerLat: _officerLat,
+                      officerLon: _officerLon,
+                      currentLocationLat: _officerLat,
+                      currentLocationLon: _officerLon,
+                      showCurrentLocation: true,
+                      showTrafficOverlay: true,
+                      extraAmbulances: ambulances
+                          .where(
+                              (a) => a.ambulanceId != selected?.ambulanceId)
+                          .map(
+                            (a) => LiveAmbulanceMarker(
+                              lat: a.latitude,
+                              lon: a.longitude,
+                              label: a.vehicleNumber,
+                              routePolyline: a.routePolyline,
+                              destLat: a.destLat,
+                              destLon: a.destLon,
+                            ),
+                          )
+                          .toList(),
+                    ),
                     Positioned(
                       top: 12,
                       left: 12,
@@ -153,11 +153,15 @@ class _OfficerMapScreenState extends State<OfficerMapScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '${ambulances.length} ambulance'
-                                      '${ambulances.length == 1 ? '' : 's'} active',
+                                      ambulances.isEmpty
+                                          ? 'No active ambulances'
+                                          : '${ambulances.length} ambulance'
+                                              '${ambulances.length == 1 ? '' : 's'} active',
                                       style: GoogleFonts.inter().copyWith(
                                         fontSize: 11,
-                                        color: kAuthFaint,
+                                        color: ambulances.isEmpty
+                                            ? kAuthMuted
+                                            : kAuthFaint,
                                         fontFeatures: const [
                                           FontFeature.tabularFigures(),
                                         ],
@@ -219,6 +223,34 @@ class _OfficerMapScreenState extends State<OfficerMapScreen> {
                                 ],
                               ),
                             ),
+                          ] else ...[
+                            const SizedBox(height: 8),
+                            GlassSurface(
+                              radius: 14,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: kAuthBlue,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Acquiring GPS...',
+                                    style: GoogleFonts.inter().copyWith(
+                                      fontSize: 11,
+                                      color: kAuthFaint,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ],
                       ),
@@ -229,37 +261,39 @@ class _OfficerMapScreenState extends State<OfficerMapScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Material(
-                            color: kAuthCard,
-                            elevation: 0,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: const BorderSide(color: kAuthBorder),
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _showRoutePanel = !_showRoutePanel;
-                                });
-                              },
-                              customBorder: RoundedRectangleBorder(
+                          if (selected != null) ...[
+                            Material(
+                              color: kAuthCard,
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(color: kAuthBorder),
                               ),
-                              child: SizedBox(
-                                width: 40,
-                                height: 40,
-                                child: Icon(
-                                  _showRoutePanel
-                                      ? Icons.close_rounded
-                                      : Icons.route_rounded,
-                                  size: 20,
-                                  color: kAuthMuted,
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _showRoutePanel = !_showRoutePanel;
+                                  });
+                                },
+                                customBorder: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: SizedBox(
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(
+                                    _showRoutePanel
+                                        ? Icons.close_rounded
+                                        : Icons.route_rounded,
+                                    size: 20,
+                                    color: kAuthMuted,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
+                            const SizedBox(width: 8),
+                          ],
                           Material(
                             color: kAuthCard,
                             elevation: 0,

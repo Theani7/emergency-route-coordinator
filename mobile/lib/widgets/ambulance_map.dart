@@ -27,6 +27,7 @@ class AmbulanceMap extends StatefulWidget {
   final double? currentLocationLat;
   final double? currentLocationLon;
   final bool showCurrentLocation;
+  final TileProvider? tileProvider;
 
   const AmbulanceMap({
     super.key,
@@ -43,6 +44,7 @@ class AmbulanceMap extends StatefulWidget {
     this.currentLocationLat,
     this.currentLocationLon,
     this.showCurrentLocation = false,
+    this.tileProvider,
   });
 
   @override
@@ -83,14 +85,19 @@ class _AmbulanceMapState extends State<AmbulanceMap>
       if (widget.showTrafficOverlay) _loadTraffic();
     });
     if (widget.showCurrentLocation) {
-      _pulseTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
-        if (mounted) {
-          setState(() {
-            _pulseRadius = (_pulseRadius + 2) % 30;
-          });
-        }
-      });
+      _startPulseAnimation();
     }
+  }
+
+  void _startPulseAnimation() {
+    _pulseTimer?.cancel();
+    _pulseTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (mounted) {
+        setState(() {
+          _pulseRadius = (_pulseRadius + 1.5) % 28;
+        });
+      }
+    });
   }
 
   @override
@@ -100,12 +107,17 @@ class _AmbulanceMapState extends State<AmbulanceMap>
   }
 
   void centerOnCurrentLocation() {
-    if (widget.currentLocationLat != null &&
-        widget.currentLocationLon != null) {
-      _mapController.move(
-        LatLng(widget.currentLocationLat!, widget.currentLocationLon!),
-        15.0,
-      );
+    final lat = widget.currentLocationLat ?? widget.officerLat;
+    final lon = widget.currentLocationLon ?? widget.officerLon;
+    if (lat != null && lon != null) {
+      try {
+        _mapController.move(
+          LatLng(lat, lon),
+          16.0,
+        );
+      } catch (e) {
+        debugPrint(e.toString());
+      }
     }
   }
 
@@ -138,10 +150,24 @@ class _AmbulanceMapState extends State<AmbulanceMap>
     super.didUpdateWidget(oldWidget);
     final routeChanged = widget.destLat != oldWidget.destLat ||
         widget.destLon != oldWidget.destLon ||
-        widget.routePolyline != oldWidget.routePolyline;
-    if (routeChanged) _fitToContent();
+        widget.routePolyline != oldWidget.routePolyline ||
+        widget.ambulanceLat != oldWidget.ambulanceLat ||
+        widget.ambulanceLon != oldWidget.ambulanceLon;
+    final locationFirstAcquired =
+        (oldWidget.currentLocationLat == null && widget.currentLocationLat != null) ||
+        (oldWidget.officerLat == null && widget.officerLat != null);
+
+    if (routeChanged || (locationFirstAcquired && widget.ambulanceLat == null)) {
+      _fitToContent();
+    }
     if (widget.showTrafficOverlay && !oldWidget.showTrafficOverlay) {
       _loadTraffic();
+    }
+    if (widget.showCurrentLocation && _pulseTimer == null) {
+      _startPulseAnimation();
+    } else if (!widget.showCurrentLocation && _pulseTimer != null) {
+      _pulseTimer?.cancel();
+      _pulseTimer = null;
     }
   }
 
@@ -159,11 +185,22 @@ class _AmbulanceMapState extends State<AmbulanceMap>
         points.add(LatLng(a.destLat!, a.destLon!));
       }
     }
+    final currentLat = widget.currentLocationLat ?? widget.officerLat;
+    final currentLon = widget.currentLocationLon ?? widget.officerLon;
+    if (points.isEmpty && currentLat != null && currentLon != null) {
+      points.add(LatLng(currentLat, currentLon));
+    }
     if (points.isEmpty) return;
 
     final center = LatLng(
-      widget.ambulanceLat ?? widget.destLat ?? KathmanduLocation.centerLat,
-      widget.ambulanceLon ?? widget.destLon ?? KathmanduLocation.centerLon,
+      widget.ambulanceLat ??
+          widget.destLat ??
+          currentLat ??
+          KathmanduLocation.centerLat,
+      widget.ambulanceLon ??
+          widget.destLon ??
+          currentLon ??
+          KathmanduLocation.centerLon,
     );
 
     const d = Distance();
@@ -185,7 +222,7 @@ class _AmbulanceMapState extends State<AmbulanceMap>
         return;
       }
       if (points.length == 1) {
-        _mapController.move(points.first, 16);
+        _mapController.move(points.first, 15.5);
         return;
       }
       var minLat = points.first.latitude;
@@ -257,7 +294,12 @@ class _AmbulanceMapState extends State<AmbulanceMap>
       }
     }
 
-    if (widget.officerLat != null && widget.officerLon != null) {
+    final currentLat = widget.currentLocationLat ?? widget.officerLat;
+    final currentLon = widget.currentLocationLon ?? widget.officerLon;
+
+    if (!widget.showCurrentLocation &&
+        widget.officerLat != null &&
+        widget.officerLon != null) {
       markers.add(_marker(
         widget.officerLat!,
         widget.officerLon!,
@@ -269,25 +311,30 @@ class _AmbulanceMapState extends State<AmbulanceMap>
 
     final circles = <CircleMarker>[];
     if (widget.showCurrentLocation &&
-        widget.currentLocationLat != null &&
-        widget.currentLocationLon != null) {
-      final lat = widget.currentLocationLat!;
-      final lon = widget.currentLocationLon!;
+        currentLat != null &&
+        currentLon != null) {
+      // Google Maps style pulsating accuracy aura
       circles.add(CircleMarker(
-        point: LatLng(lat, lon),
-        color: const Color(0xFF4285F4).withValues(alpha: 0.3),
-        radius: 20 + _pulseRadius,
+        point: LatLng(currentLat, currentLon),
+        color: const Color(0xFF4285F4).withValues(alpha: 0.18),
+        radius: 18 + _pulseRadius,
         useRadiusInMeter: false,
-        borderStrokeWidth: 2,
-        borderColor: const Color(0xFF4285F4),
+        borderStrokeWidth: 1.5,
+        borderColor: const Color(0xFF4285F4).withValues(alpha: 0.4),
       ));
+      // Outer crisp white ring
       circles.add(CircleMarker(
-        point: LatLng(lat, lon),
-        color: const Color(0xFF4285F4),
-        radius: 8,
+        point: LatLng(currentLat, currentLon),
+        color: Colors.white,
+        radius: 9.5,
         useRadiusInMeter: false,
-        borderStrokeWidth: 2,
-        borderColor: Colors.white,
+      ));
+      // Inner solid Google Blue core dot
+      circles.add(CircleMarker(
+        point: LatLng(currentLat, currentLon),
+        color: const Color(0xFF1A73E8),
+        radius: 7.0,
+        useRadiusInMeter: false,
       ));
     }
 
@@ -304,8 +351,14 @@ class _AmbulanceMapState extends State<AmbulanceMap>
     ];
 
     final center = LatLng(
-      widget.ambulanceLat ?? widget.destLat ?? KathmanduLocation.centerLat,
-      widget.ambulanceLon ?? widget.destLon ?? KathmanduLocation.centerLon,
+      widget.ambulanceLat ??
+          widget.destLat ??
+          currentLat ??
+          KathmanduLocation.centerLat,
+      widget.ambulanceLon ??
+          widget.destLon ??
+          currentLon ??
+          KathmanduLocation.centerLon,
     );
 
     return SizedBox.expand(
@@ -314,8 +367,8 @@ class _AmbulanceMapState extends State<AmbulanceMap>
           mapController: _mapController,
           options: MapOptions(
             initialCenter: center,
-            initialZoom: 13,
-            minZoom: 12,
+            initialZoom: 14,
+            minZoom: 10,
             maxZoom: 18,
             onMapReady: () => _mapReady = true,
           ),
@@ -323,7 +376,8 @@ class _AmbulanceMapState extends State<AmbulanceMap>
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.ambulance.coordination',
-              tileProvider: CachedTileProvider(store: mapCacheStore),
+              tileProvider:
+                  widget.tileProvider ?? CachedTileProvider(store: mapCacheStore),
               errorTileCallback: (tile, error, stackTrace) {
                 debugPrint('Tile load error: $error');
               },
@@ -334,17 +388,18 @@ class _AmbulanceMapState extends State<AmbulanceMap>
             if (polylines.isNotEmpty) PolylineLayer(polylines: polylines),
             if (circles.isNotEmpty) CircleLayer(circles: circles),
             MarkerLayer(markers: markers),
-            if (widget.showCurrentLocation)
+            if (widget.showCurrentLocation && (currentLat != null && currentLon != null))
               Align(
                 alignment: Alignment.bottomRight,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: FloatingActionButton.small(
-                    heroTag: 'my_location',
+                    heroTag: null,
                     onPressed: centerOnCurrentLocation,
                     backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF4285F4),
-                    child: const Icon(Icons.my_location),
+                    foregroundColor: const Color(0xFF1A73E8),
+                    elevation: 3,
+                    child: const Icon(Icons.my_location_rounded),
                   ),
                 ),
               ),
@@ -363,20 +418,30 @@ class _AmbulanceMapState extends State<AmbulanceMap>
   ) {
     return Marker(
       point: LatLng(lat, lon),
-      width: 80,
-      height: 70,
+      width: 100,
+      height: 60,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 32),
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 2),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(6),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
+              ],
             ),
             child: Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

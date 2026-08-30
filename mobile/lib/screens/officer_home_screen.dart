@@ -56,19 +56,24 @@ class _OfficerHomeScreenState extends State<OfficerHomeScreen> {
     });
   }
 
+  Future<void> _pushCurrentLocation() async {
+    try {
+      final position = await GpsTrackingService.bestPosition();
+      if (position != null && mounted) {
+        final api = context.read<ApiService>();
+        await api.post('/api/v1/profile/location', data: {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        });
+      }
+    } catch (_) {}
+  }
+
   void _startLocationTracking() {
     _locationTimer?.cancel();
-    _locationTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
-      try {
-        final position = await GpsTrackingService.bestPosition();
-        if (position != null && mounted) {
-          final api = context.read<ApiService>();
-          await api.post('/api/v1/profile/location', data: {
-            'latitude': position.latitude,
-            'longitude': position.longitude,
-          });
-        }
-      } catch (_) {}
+    _pushCurrentLocation();
+    _locationTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _pushCurrentLocation();
     });
   }
 
