@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     login_rate_limit_max: int = 10
     login_rate_limit_window_seconds: int = 60
 
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8000"
 
     osrm_base_url: str = "https://router.project-osrm.org"
     firebase_credentials_json: str = ""
